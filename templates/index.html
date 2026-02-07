@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Mantra WebLogix{% endblock %}
+
+{% block content %}
+<div class="hero-section">
+    <div class="hero-content">
+        <h1 class="hero-title">Welcome to Mantra WebLogix</h1>
+        <p class="hero-subtitle">Empowering Digital Transformation</p>
+        <p class="hero-description">Build, innovate, and scale with cutting-edge web solutions</p>
+        <div class="hero-buttons">
+            <a href="{{ url_for('about') }}" class="btn btn-primary">Learn More</a>
+            <a href="{{ url_for('tcs_dashboard') }}" class="btn btn-secondary">Try TCS</a>
+        </div>
+    </div>
+</div>
+
+<section class="features-section">
+    <div class="container">
+        <h2>Our Features</h2>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <h3>Modern Technology</h3>
+                <p>Built with Flask, Python, and modern web technologies</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-users"></i>
+                </div>
+                <h3>Collaborative Tools</h3>
+                <p>Team features and collaborative expense management</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-chart-pie"></i>
+                </div>
+                <h3>Smart Analytics</h3>
+                <p>Real-time insights and settlement calculations</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+                <h3>Secure & Reliable</h3>
+                <p>Enterprise-grade security for your data</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="tcs-preview-section">
+    <div class="container">
+        <div class="tcs-preview">
+            <h2>TripContriSplitter (TCS)</h2>
+            <p>Smart expense tracking and settlement for group trips</p>
+            <div class="tcs-features">
+                <div class="tcs-feature">
+                    <i class="fas fa-credit-card"></i>
+                    <h4>Track Expenses</h4>
+                    <p>Record all trip expenses easily</p>
+                </div>
+                <div class="tcs-feature">
+                    <i class="fas fa-balance-scale"></i>
+                    <h4>Split Bills</h4>
+                    <p>Automatic fair split among members</p>
+                </div>
+                <div class="tcs-feature">
+                    <i class="fas fa-handshake"></i>
+                    <h4>Settlement</h4>
+                    <p>Get exact settlement amounts</p>
+                </div>
+            </div>
+            <a href="{{ url_for('tcs_dashboard') }}" class="btn btn-primary">Go to TCS</a>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+        <h2>Ready to get started?</h2>
+        <p>Join thousands of users managing expenses smartly</p>
+        <a href="{{ url_for('tcs_create_trip') }}" class="btn btn-large">Create Your First Trip</a>
+    </div>
+</section>
+{% endblock %}

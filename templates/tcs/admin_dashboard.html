@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - TCS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-shield-alt"></i> Admin Dashboard</h1>
+    <p>Manage and monitor all trips</p>
+</div>
+
+<div class="container">
+    <div class="admin-header">
+        <h2>All Trips ({{ trips|length }})</h2>
+        <div class="admin-actions">
+            <a href="{{ url_for('tcs_dashboard') }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+            <a href="{{ url_for('tcs_admin_logout') }}" class="btn btn-danger">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </div>
+
+    {% if trips %}
+        <div class="admin-table-wrapper">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Trip ID</th>
+                        <th>Trip Name</th>
+                        <th>Created</th>
+                        <th>Members</th>
+                        <th>Expenses</th>
+                        <th>Total Amount</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for trip in trips %}
+                    <tr data-trip-id="{{ trip.id }}">
+                        <td>
+                            <code class="trip-id-code">{{ trip.id }}</code>
+                            <button class="btn-copy-small" onclick="copyToClipboard('{{ trip.id }}')" title="Copy Trip ID">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </td>
+                        <td>
+                            <strong>{{ trip.name }}</strong>
+                            {% if trip.description %}
+                                <br><small>{{ trip.description[:50] }}...</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ trip.created_date.split('T')[0] }}</td>
+                        <td class="text-center">{{ trip.members_count }}</td>
+                        <td class="text-center">{{ trip.expenses_count }}</td>
+                        <td class="text-right">₹{{ "%.2f"|format(trip.total_amount) }}</td>
+                        <td>
+                            <a href="/tcs/trip/{{ trip.id }}/auth" class="btn btn-small btn-primary" title="View Trip">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <button class="btn btn-small btn-danger" onclick="deleteAdminTrip('{{ trip.id }}')" title="Delete Trip">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="admin-stats">
+            <div class="stat-card">
+                <h4>Total Trips</h4>
+                <p class="stat-value">{{ trips|length }}</p>
+            </div>
+            <div class="stat-card">
+                <h4>Total Members</h4>
+                <p class="stat-value">{{ trips|sum(attribute='members_count') }}</p>
+            </div>
+            <div class="stat-card">
+                <h4>Total Expenses</h4>
+                <p class="stat-value">{{ trips|sum(attribute='expenses_count') }}</p>
+            </div>
+            <div class="stat-card">
+                <h4>Total Amount</h4>
+                <p class="stat-value">₹{{ "%.2f"|format(trips|sum(attribute='total_amount')) }}</p>
+            </div>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h3>No trips yet</h3>
+            <p>Create a trip to start managing expenses</p>
+            <a href="{{ url_for('tcs_dashboard') }}" class="btn btn-primary">Go to Dashboard</a>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 30px 0 25px 0;
+    }
+
+    .admin-actions {
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #f43f5e, #e11d48);
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+    }
+
+    .btn-danger:hover {
+        background: linear-gradient(135deg, #e11d48, #be123c);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #64748b, #475569);
+        color: white;
+        border: none;
+        padding: 10px 16px;
+        border-radius: 6px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+    }
+
+    .btn-secondary:hover {
+        background: linear-gradient(135deg, #475569, #334155);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(100, 116, 139, 0.3);
+    }
+
+    .admin-table-wrapper {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        overflow-x: auto;
+        margin-bottom: 30px;
+    }
+
+    .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95em;
+    }
+
+    .admin-table thead {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .admin-table th {
+        padding: 15px;
+        text-align: left;
+        font-weight: 600;
+    }
+
+    .admin-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .admin-table tbody tr:hover {
+        background: #f9f9f9;
+    }
+
+    .trip-id-code {
+        background: #f0f0f0;
+        padding: 4px 8px;
+        border-radius: 3px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.85em;
+    }
+
+    .btn-copy-small {
+        background: none;
+        border: none;
+        color: #667eea;
+        cursor: pointer;
+        padding: 4px 6px;
+        margin-left: 6px;
+        transition: color 0.3s ease;
+    }
+
+    .btn-copy-small:hover {
+        color: #764ba2;
+    }
+
+    .text-center {
+        text-align: center;
+    }
+
+    .text-right {
+        text-align: right;
+        font-weight: 600;
+    }
+
+    .admin-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+    }
+
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        text-align: center;
+    }
+
+    .stat-card h4 {
+        margin: 0 0 10px 0;
+        color: #666;
+        font-size: 0.95em;
+        font-weight: 600;
+    }
+
+    .stat-value {
+        margin: 0;
+        font-size: 2em;
+        font-weight: bold;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .empty-state i {
+        font-size: 4em;
+        color: #ddd;
+        margin-bottom: 20px;
+    }
+
+    .btn-small {
+        padding: 6px 10px;
+        font-size: 0.85em;
+        margin: 0 4px;
+    }
+
+    @media (max-width: 768px) {
+        .admin-table-wrapper {
+            overflow-x: auto;
+        }
+
+        .admin-table {
+            font-size: 0.85em;
+        }
+
+        .admin-table th,
+        .admin-table td {
+            padding: 10px 8px;
+        }
+
+        .admin-stats {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+</style>
+
+<script>
+function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Trip ID copied: ' + text);
+        }).catch(err => {
+            console.error('Copy failed:', err);
+            fallbackCopy(text);
+        });
+    } else {
+        fallbackCopy(text);
+    }
+}
+
+function fallbackCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        alert('Trip ID copied: ' + text);
+    } catch (err) {
+        alert('Copy failed. Trip ID: ' + text);
+    }
+    document.body.removeChild(textarea);
+}
+
+function deleteAdminTrip(tripId) {
+    if (!confirm('Delete this trip and all its data? This action cannot be undone.')) return;
+    
+    fetch(`/tcs/trip/${tripId}/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    }).then(r => r.json()).then(data => {
+        if (data.status === 'success') {
+            alert('Trip deleted successfully');
+            location.reload();
+        } else {
+            alert(data.message || 'Error deleting trip');
+        }
+    }).catch(e => {
+        console.error('Error:', e);
+        alert('Error deleting trip');
+    });
+}
+</script>
+
+{% endblock %}

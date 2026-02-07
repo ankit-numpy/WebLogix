@@ -1,0 +1,676 @@
+{% extends "base.html" %}
+
+{% block title %}Trip Details - {{ trip.name }} - TCS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-map"></i> {{ trip.name }}</h1>
+    <p>{{ trip.description }}</p>
+</div>
+
+<div class="container">
+    <div class="trip-details-container">
+        <!-- Left Sidebar - Trip Info and Expenses -->
+        <div class="trip-main">
+            <!-- Trip Statistics -->
+            <div class="trip-stats-panel">
+                <div class="stat-box">
+                    <span class="stat-label">Total Amount</span>
+                    <span class="stat-value">₹{{ "%.2f"|format(trip.total_amount) }}</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Members</span>
+                    <span class="stat-value">{{ trip.members|length }}</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Expenses</span>
+                    <span class="stat-value">{{ trip.expenses|length }}</span>
+                </div>
+                <div class="stat-box">
+                    <span class="stat-label">Created</span>
+                    <span class="stat-value">
+                        {% set created_date = trip.created_date.split('T')[0] %}
+                        {{ created_date }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Add Expense Section -->
+            <div class="add-expense-section">
+                <h3><i class="fas fa-plus"></i> Add Expense</h3>
+                <form id="expenseForm" class="expense-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <input 
+                                type="text" 
+                                id="description" 
+                                placeholder="e.g., Hotel booking" 
+                                required
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="amount">Amount (₹)</label>
+                            <input 
+                                type="number" 
+                                id="amount" 
+                                placeholder="0.00" 
+                                step="0.01" 
+                                min="0"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="paidBy">Paid By</label>
+                            <select id="paidBy" required>
+                                <option value="">Select member...</option>
+                                {% for member in trip.members %}
+                                <option value="{{ member }}">{{ member }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Split Among</label>
+                            <div class="split-checkboxes">
+                                {% for member in trip.members %}
+                                <label class="checkbox-label">
+                                    <input 
+                                        type="checkbox" 
+                                        class="split-member" 
+                                        value="{{ member }}"
+                                        checked
+                                    >
+                                    {{ member }}
+                                </label>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Add Expense
+                    </button>
+                </form>
+            </div>
+
+            <!-- Expenses List -->
+            <div class="expenses-section">
+                <h3><i class="fas fa-list"></i> Expenses</h3>
+                <div id="expensesList">
+                    {% if trip.expenses %}
+                        {% for expense in trip.expenses %}
+                        <div class="expense-item" data-expense-id="{{ expense.id }}">
+                            <div class="expense-info">
+                                <h4>{{ expense.description }}</h4>
+                                <p class="expense-details">
+                                    Paid by <strong>{{ expense.paid_by }}</strong> 
+                                    on {{ expense.date.split('T')[0] }}
+                                </p>
+                            </div>
+                            <div class="expense-amount">
+                                ₹{{ "%.2f"|format(expense.amount) }}
+                            </div>
+                            <button class="btn btn-link btn-small btn-delete-expense" onclick="deleteExpense('{{ expense.id }}')" title="Delete expense">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="empty-message">No expenses added yet</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar - Settlements -->
+        <div class="trip-sidebar">
+            <div class="settlements-panel">
+                <h3><i class="fas fa-handshake"></i> Settlements</h3>
+                <p class="settlements-info">Who owes whom and how much</p>
+
+                {% if settlements %}
+                    <div class="settlements-list">
+                        {% for settlement in settlements %}
+                        <div class="settlement-item">
+                            <div class="settlement-from">
+                                <span class="member-name">{{ settlement.from }}</span>
+                                <span class="owes-label">owes</span>
+                            </div>
+                            <div class="settlement-amount">
+                                ₹{{ "%.2f"|format(settlement.amount) }}
+                            </div>
+                            <div class="settlement-to">
+                                <span class="member-name">{{ settlement.to }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty-message">Add expenses to see settlements</p>
+                {% endif %}
+            </div>
+
+            <!-- Member Summary -->
+            <div class="members-summary-panel">
+                <h3><i class="fas fa-users"></i> Member Summary</h3>
+                <div class="members-list">
+                    {% for member in trip.members %}
+                    <div class="member-summary-item" data-member="{{ member }}">
+                        <span class="member-name">{{ member }}</span>
+                        <span class="member-status">
+                            {% set member_balance = member_balances.get(member, 0) %}
+                            {% if member_balance > 0 %}
+                                <span class="status-owed">+₹{{ "%.2f"|format(member_balance) }}</span>
+                            {% elif member_balance < 0 %}
+                                <span class="status-owes">-₹{{ "%.2f"|format(member_balance|abs) }}</span>
+                            {% else %}
+                                <span class="status-settled">Settled</span>
+                            {% endif %}
+                        </span>
+                        <button class="btn btn-link btn-small btn-delete-member" onclick="deleteMember('{{ member }}')" title="Delete member">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    {% endfor %}
+                    <form id="addMemberForm" class="add-member-form" onsubmit="addMemberSubmit(event)">
+                        <input 
+                            type="text" 
+                            id="newMemberName" 
+                            name="newMemberName"
+                            placeholder="New member name" 
+                            required
+                            autocomplete="off"
+                        >
+                        <button type="submit" class="btn btn-primary btn-small" id="addMemberBtn">
+                            Add Member
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="actions-panel">
+                <a href="{{ url_for('tcs_dashboard') }}" class="btn btn-secondary btn-block">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                <button class="btn btn-danger btn-block" id="deleteTripBtn">Delete Trip</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .trip-details-container {
+        display: grid;
+        grid-template-columns: 1fr 350px;
+        gap: 30px;
+        margin: 30px 0;
+    }
+
+    .trip-main {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+
+    .trip-stats-panel {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+    }
+
+    .stat-box {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+    }
+
+    .stat-label {
+        display: block;
+        font-size: 0.85em;
+        opacity: 0.9;
+        margin-bottom: 8px;
+    }
+
+    .stat-value {
+        display: block;
+        font-size: 1.8em;
+        font-weight: bold;
+    }
+
+    .add-expense-section,
+    .expenses-section {
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .add-expense-section h3,
+    .expenses-section h3 {
+        margin-top: 0;
+        color: #333;
+        border-bottom: 2px solid #667eea;
+        padding-bottom: 10px;
+    }
+
+    .expense-form {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group label {
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #333;
+        font-size: 0.9em;
+    }
+
+    .form-group input,
+    .form-group select {
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 0.95em;
+        font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .split-checkboxes {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: center;
+        font-weight: normal;
+        cursor: pointer;
+        font-size: 0.9em;
+    }
+
+    .checkbox-label input {
+        margin-right: 6px;
+        cursor: pointer;
+    }
+
+    .expense-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        border: 1px solid #eee;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+
+    .expense-info h4 {
+        margin: 0 0 5px 0;
+        color: #333;
+    }
+
+    .expense-details {
+        margin: 0;
+        font-size: 0.85em;
+        color: #666;
+    }
+
+    .expense-amount {
+        font-size: 1.3em;
+        font-weight: bold;
+        color: #667eea;
+    }
+
+    .empty-message {
+        text-align: center;
+        color: #999;
+        padding: 20px;
+    }
+
+    /* Sidebar Styles */
+    .trip-sidebar {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .settlements-panel,
+    .members-summary-panel,
+    .actions-panel {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .settlements-panel h3,
+    .members-summary-panel h3 {
+        margin-top: 0;
+        color: #333;
+        border-bottom: 2px solid #667eea;
+        padding-bottom: 10px;
+    }
+
+    .settlements-info {
+        font-size: 0.9em;
+        color: #666;
+        margin: 0;
+    }
+
+    .settlements-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-top: 15px;
+    }
+
+    .settlement-item {
+        background: #f9f9f9;
+        padding: 12px;
+        border-radius: 5px;
+        border-left: 3px solid #ffc107;
+    }
+
+    .settlement-from,
+    .settlement-to {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.9em;
+        margin-bottom: 4px;
+    }
+
+    .owes-label {
+        color: #666;
+        font-style: italic;
+    }
+
+    .settlement-amount {
+        font-size: 1.1em;
+        font-weight: bold;
+        color: #d32f2f;
+        text-align: center;
+        margin: 8px 0;
+    }
+
+    .member-name {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .members-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-top: 15px;
+    }
+
+    .member-summary-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        background: #f9f9f9;
+        border-radius: 5px;
+    }
+
+    .add-member-form {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+        padding: 10px;
+        background: #f0f0f0;
+        border-radius: 5px;
+        align-items: center;
+    }
+
+    .add-member-form input {
+        flex: 1;
+        padding: 10px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9em;
+        min-width: 150px;
+    }
+
+    .add-member-form input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+    }
+
+    .add-member-form button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+        color: white !important;
+        border: none !important;
+        padding: 10px 18px !important;
+        border-radius: 4px !important;
+        cursor: pointer !important;
+        font-weight: 600 !important;
+        font-size: 0.9em !important;
+        white-space: nowrap;
+        transition: all 0.3s ease !important;
+        flex-shrink: 0;
+    }
+
+    .add-member-form button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+    }
+
+    .add-member-form button:active {
+        transform: translateY(0) !important;
+    }
+
+    .member-status {
+        font-weight: 600;
+        font-size: 0.9em;
+    }
+
+    .status-owed {
+        color: #4caf50;
+    }
+
+    .status-owes {
+        color: #d32f2f;
+    }
+
+    .status-settled {
+        color: #4caf50;
+    }
+
+    .btn-block {
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    @media (max-width: 1024px) {
+        .trip-details-container {
+            grid-template-columns: 1fr;
+        }
+
+        .trip-stats-panel {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .trip-stats-panel {
+            grid-template-columns: 1fr;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .split-checkboxes {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<script>
+    function get_member_balance(trip, member) {
+        let balance = 0;
+        trip.expenses.forEach(expense => {
+            if (expense.paid_by === member) {
+                balance += expense.amount;
+            }
+            const split_count = expense.split_among.length;
+            if (expense.split_among.includes(member)) {
+                balance -= expense.amount / split_count;
+            }
+        });
+        return balance;
+    }
+
+    document.getElementById('expenseForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const splitCheckboxes = document.querySelectorAll('.split-member:checked');
+        const splitAmong = Array.from(splitCheckboxes).map(cb => cb.value);
+
+        if (splitAmong.length === 0) {
+            alert('Please select at least one member to split the expense');
+            return;
+        }
+
+        const expenseData = {
+            description: document.getElementById('description').value,
+            amount: parseFloat(document.getElementById('amount').value),
+            paid_by: document.getElementById('paidBy').value,
+            split_among: splitAmong
+        };
+
+        const tripId = '{{ trip.id }}';
+        let url = `/tcs/trip/${tripId}/add-expense`;
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(expenseData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Reload the page to show updated data
+                location.reload();
+            } else {
+                alert('Error adding expense');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error adding expense');
+        });
+    });
+
+    // Add member
+    function addMemberSubmit(e) {
+        e.preventDefault();
+        const nameInput = document.getElementById('newMemberName');
+        const submitBtn = document.getElementById('addMemberBtn');
+        const name = nameInput.value.trim();
+        
+        if (!name) { 
+            alert('Please enter a member name'); 
+            return; 
+        }
+        
+        const tripId = '{{ trip.id }}';
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Adding...';
+        
+        fetch(`/tcs/trip/${tripId}/add-member`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name })
+        })
+        .then(r => {
+            if (!r.ok) {
+                throw new Error(`HTTP error! status: ${r.status}`);
+            }
+            return r.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                nameInput.value = '';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Add Member';
+                alert('Member added successfully!');
+                location.reload();
+            } else {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Add Member';
+                alert(data.message || 'Error adding member');
+            }
+        })
+        .catch(error => { 
+            console.error('Error:', error); 
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Add Member';
+            alert('Error adding member: ' + error.message); 
+        });
+    }
+
+    function deleteMember(name) {
+        if (!confirm('Delete member ' + name + '? This may remove related expenses.')) return;
+        const tripId = '{{ trip.id }}';
+        fetch(`/tcs/trip/${tripId}/delete-member`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name })
+        }).then(r => r.json()).then(data => {
+            if (data.status === 'success') location.reload(); else alert(data.message || 'Error deleting member');
+        }).catch(e => { console.error(e); alert('Error deleting member'); });
+    }
+
+    function deleteExpense(expId) {
+        if (!confirm('Delete expense?')) return;
+        const tripId = '{{ trip.id }}';
+        fetch(`/tcs/trip/${tripId}/delete-expense`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ expense_id: expId })
+        }).then(r => r.json()).then(data => {
+            if (data.status === 'success') location.reload(); else alert(data.message || 'Error deleting expense');
+        }).catch(e => { console.error(e); alert('Error deleting expense'); });
+    }
+
+    document.getElementById('deleteTripBtn').addEventListener('click', function(e) {
+        if (!confirm('Delete this trip and all its expenses?')) return;
+        const tripId = '{{ trip.id }}';
+        fetch(`/tcs/trip/${tripId}/delete`, { method: 'POST' }).then(r => r.json()).then(data => {
+            if (data.status === 'success') { window.location.href = '{{ url_for("tcs_dashboard") }}'; } else { alert(data.message || 'Error deleting trip'); }
+        }).catch(e => { console.error(e); alert('Error deleting trip'); });
+    });
+</script>
+{% endblock %}

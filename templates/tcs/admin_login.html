@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Login - TCS{% endblock %}
+
+{% block content %}
+<div class="tcs-container">
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>Admin Dashboard</h1>
+                <p>Enter your passkey to access admin controls</p>
+            </div>
+
+            <form id="adminLoginForm" class="login-form" onsubmit="handleAdminLogin(event)">
+                <div class="form-group">
+                    <label for="passkey">Passkey:</label>
+                    <input 
+                        type="password" 
+                        id="passkey" 
+                        name="passkey" 
+                        placeholder="Enter passkey" 
+                        required 
+                        autocomplete="current-password"
+                    >
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block">
+                    Authenticate
+                </button>
+
+                <div id="errorMessage" class="error-message" style="display: none;"></div>
+                <div id="successMessage" class="success-message" style="display: none;"></div>
+            </form>
+
+            <div class="login-footer">
+                <p>
+                    <a href="{{ url_for('tcs_dashboard') }}" class="btn btn-text">← Back to Dashboard</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.login-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 200px);
+    padding: 20px;
+}
+
+.login-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+    width: 100%;
+    max-width: 400px;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 35px;
+}
+
+.login-header h1 {
+    color: #6b46c1;
+    margin: 0 0 8px 0;
+    font-size: 28px;
+}
+
+.login-header p {
+    color: #666;
+    margin: 0;
+    font-size: 14px;
+}
+
+.login-form {
+    margin-bottom: 20px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #6b46c1;
+    box-shadow: 0 0 0 3px rgba(107, 70, 193, 0.1);
+}
+
+.btn-block {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, #6b46c1, #7c3aed);
+    color: white;
+}
+
+.btn-block:hover {
+    background: linear-gradient(135deg, #5a35a0, #6d28d9);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(107, 70, 193, 0.3);
+}
+
+.btn-block:active {
+    transform: translateY(0);
+}
+
+.error-message {
+    background-color: #fee;
+    border-left: 4px solid #c33;
+    color: #c33;
+    padding: 12px;
+    border-radius: 4px;
+    margin-top: 15px;
+    font-size: 14px;
+}
+
+.success-message {
+    background-color: #efe;
+    border-left: 4px solid #3c3;
+    color: #3c3;
+    padding: 12px;
+    border-radius: 4px;
+    margin-top: 15px;
+    font-size: 14px;
+}
+
+.login-footer {
+    text-align: center;
+    border-top: 1px solid #e0e0e0;
+    padding-top: 20px;
+}
+
+.login-footer p {
+    margin: 0;
+}
+
+.btn-text {
+    background: none;
+    border: none;
+    color: #6b46c1;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.btn-text:hover {
+    color: #5a35a0;
+    text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+    .login-card {
+        padding: 25px;
+    }
+
+    .login-header h1 {
+        font-size: 24px;
+    }
+
+    .login-header p {
+        font-size: 13px;
+    }
+}
+</style>
+
+<script>
+function handleAdminLogin(event) {
+    event.preventDefault();
+    
+    const passkey = document.getElementById('passkey').value;
+    const errorDiv = document.getElementById('errorMessage');
+    const successDiv = document.getElementById('successMessage');
+    
+    // Clear previous messages
+    errorDiv.style.display = 'none';
+    successDiv.style.display = 'none';
+    
+    if (!passkey.trim()) {
+        errorDiv.textContent = 'Please enter a passkey';
+        errorDiv.style.display = 'block';
+        return;
+    }
+    
+    // Send passkey to server
+    fetch('/tcs/admin/login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ passkey: passkey })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            successDiv.textContent = 'Authentication successful! Redirecting...';
+            successDiv.style.display = 'block';
+            setTimeout(() => {
+                window.location.href = '{{ url_for("tcs_admin_dashboard") }}';
+            }, 1000);
+        } else {
+            errorDiv.textContent = data.message || 'Invalid passkey. Please try again.';
+            errorDiv.style.display = 'block';
+            document.getElementById('passkey').value = '';
+            document.getElementById('passkey').focus();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        errorDiv.textContent = 'An error occurred. Please try again.';
+        errorDiv.style.display = 'block';
+    });
+}
+
+// Focus on passkey input when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('passkey').focus();
+});
+</script>
+{% endblock %}

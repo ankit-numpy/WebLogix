@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Our Team - Mantra WebLogix{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Meet Our Team</h1>
+    <p>Talented professionals dedicated to your success</p>
+</div>
+
+<div class="container">
+    <section class="team-section">
+        <p class="team-intro">
+            Our diverse team of experts brings together years of experience in web development, 
+            design, and product management. We're passionate about creating solutions that make a difference.
+        </p>
+
+        <div class="team-grid">
+            {% for member in team %}
+            <div class="team-card">
+                <div class="team-image">
+                    <div class="placeholder-image">
+                        <i class="fas fa-user"></i>
+                    </div>
+                </div>
+                <div class="team-info">
+                    <h3>{{ member.name }}</h3>
+                    <p class="team-position">{{ member.position }}</p>
+                    <p class="team-bio">{{ member.bio }}</p>
+                    <div class="team-socials">
+                        <a href="#" title="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                        <a href="#" title="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" title="GitHub"><i class="fab fa-github"></i></a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="team-culture">
+        <h2>Our Culture</h2>
+        <div class="culture-items">
+            <div class="culture-item">
+                <i class="fas fa-lightbulb"></i>
+                <h4>Innovation First</h4>
+                <p>We encourage creative thinking and new ideas</p>
+            </div>
+            <div class="culture-item">
+                <i class="fas fa-handshake"></i>
+                <h4>Collaboration</h4>
+                <p>Teamwork makes the dream work</p>
+            </div>
+            <div class="culture-item">
+                <i class="fas fa-rocket"></i>
+                <h4>Growth</h4>
+                <p>Continuous learning and professional development</p>
+            </div>
+            <div class="culture-item">
+                <i class="fas fa-heart"></i>
+                <h4>Passion</h4>
+                <p>We love what we do and it shows</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="join-team">
+        <h2>Join Our Team</h2>
+        <p>We're always looking for talented individuals to join our growing team</p>
+        <a href="mailto:careers@mantraweb.com" class="btn btn-primary">View Careers</a>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Enter Trip ID - TCS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-lock"></i> Authorize Trip Access</h1>
+    <p>Enter your Trip ID to view and manage your trip</p>
+</div>
+
+<div class="container">
+    <div class="form-container">
+        {% if error %}
+            <div class="error-message"><i class="fas fa-exclamation-circle"></i> {{ error }}</div>
+        {% endif %}
+        
+        <div class="trip-id-display">
+            <p class="trip-id-label">Your Trip ID:</p>
+            <div class="trip-id-box">
+                <code>{{ trip_id }}</code>
+                <button type="button" class="btn-copy" onclick="copyTripId()" title="Copy Trip ID">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+            <p class="trip-id-note">Enter this ID below to access your trip</p>
+        </div>
+
+        <form method="post" action="{{ url_for('tcs_enter_trip', trip_id=trip_id) }}">
+            <div class="form-group">
+                <label for="entered_id">Enter Trip ID</label>
+                <input type="text" id="entered_id" name="entered_id" placeholder="Paste Trip ID here" required autofocus>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-block">Continue</button>
+                <a href="{{ url_for('tcs_dashboard') }}" class="btn btn-secondary btn-block">Back to Dashboard</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.form-container { 
+    max-width: 500px; 
+    margin: 30px auto; 
+    background: white; 
+    padding: 30px; 
+    border-radius: 8px; 
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+}
+
+.error-message { 
+    color: #b00020;
+    background: #ffebee;
+    padding: 12px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.trip-id-display {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 24px;
+    margin-bottom: 25px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.trip-id-label {
+    margin: 0 0 12px 0;
+    font-size: 0.95em;
+    opacity: 0.95;
+}
+
+.trip-id-box {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.15);
+    padding: 14px 16px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+}
+
+.trip-id-box code {
+    font-family: 'Courier New', monospace;
+    font-size: 1.1em;
+    font-weight: bold;
+    letter-spacing: 1px;
+    user-select: all;
+}
+
+.btn-copy {
+    background: rgba(255,255,255,0.25);
+    border: none;
+    color: white;
+    padding: 8px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.btn-copy:hover {
+    background: rgba(255,255,255,0.35);
+}
+
+.trip-id-note {
+    margin: 0;
+    font-size: 0.9em;
+    opacity: 0.9;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.form-group input {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1em;
+    font-family: 'Courier New', monospace;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.btn-block {
+    width: 100%;
+    padding: 12px;
+}
+
+@media (max-width: 600px) {
+    .form-container {
+        padding: 20px;
+    }
+    
+    .trip-id-box code {
+        font-size: 0.95em;
+        letter-spacing: 0.5px;
+    }
+}
+</style>
+
+<script>
+function copyTripId() {
+    const code = document.querySelector('.trip-id-box code');
+    const text = code.textContent.trim();
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('Trip ID copied to clipboard!');
+        }).catch(err => {
+            console.error('Clipboard API failed:', err);
+            fallbackCopy(text);
+        });
+    } else {
+        fallbackCopy(text);
+    }
+}
+
+function fallbackCopy(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    try {
+        document.execCommand('copy');
+        alert('Trip ID copied to clipboard!');
+    } catch (err) {
+        console.error('Fallback copy failed:', err);
+        alert('Copy failed. Please copy manually: ' + text);
+    }
+    document.body.removeChild(textarea);
+}
+</script>
+
+{% endblock %}
