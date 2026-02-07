@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session, abort
+from flask import Flask, render_template, request, jsonify, session, abort, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import json
@@ -181,7 +181,13 @@ def tcs_create_trip():
         db.session.add(trip)
         db.session.commit()
         
-        # Redirect to authorize page where user will see trip ID and enter it
+        # Add trip to this session's authorized trips so creator can manage it immediately
+        authorized = session.get('authorized_trips', [])
+        if trip_id not in authorized:
+            authorized.append(trip_id)
+            session['authorized_trips'] = authorized
+
+        # Return trip id and authorize URL
         return jsonify({'status': 'success', 'trip_id': trip_id, 'authorize_url': f'/tcs/trip/{trip_id}/auth'})
     
     return render_template('tcs/create_trip.html')

@@ -625,8 +625,10 @@
                 nameInput.value = '';
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Add Member';
-                alert('Member added successfully!');
-                location.reload();
+                // Reload immediately to show new member
+                setTimeout(() => {
+                    location.reload();
+                }, 300);
             } else {
                 submitBtn.disabled = false;
                 submitBtn.textContent = 'Add Member';
